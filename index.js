@@ -4,7 +4,7 @@ lastCapture = 0;
 gameOver = false;
 player = "X";
 computer = "O";
-maxDepth = 20;
+maxDepth = 10;
 counter = 0;
 
 function init() {
@@ -21,6 +21,7 @@ function init() {
         currentMove = "X";
         otherMove = "O";
         gameOver = false;
+        lastCapture = 0;
         document.getElementById("winner").innerHTML = "";
         document.getElementById("current-move").innerHTML = `Current move: ${currentMove}`;
         cells.forEach((c) => {
@@ -84,42 +85,34 @@ function spacePossession(s) {
     return space.innerHTML[0];
 }
 
-function getMove() { 
-    // AI not done yet, placeholder move
-    let currentState = [];
-    for (let i = 0; i < 9; i++) {
-        currentState.push(cells[i].innerHTML);
-    }
-    let possibleActions = actions(currentState, lastCapture);
-    return [Math.floor(Math.random() * possibleActions.length)];
-    let initState = [];
-    for (let i = 0; i < 9; i++) {
-        initState.push(cells[i].innerHTML);
-    }
-    for (let targetScore = -1; targetScore <= 1; targetScore++) {
-        for (let i = 0; i <= 8; i++) {
-            if (maxVal(result(initState, i), i, 0) == targetScore) {
-                return i;
-            }
-        }
-    }
-    //let move = minVal(initState, lastCapture, 0);
-    //return move;
-}
-
-function result(state, move) {
-    newState = [...state];
-    if (newState[move] == computer) newState[move] == computer + computer;
-    else newState[move] = computer;
-    return newState;
-}
-
 function actions(state, lCapture) {
     let actions = [];
     for (let i = 0; i < 9; i++) {
         if (cells[i] != lCapture && state[i] != player + player && state[i] != computer + computer) actions.push(i);
     }
     return actions;
+}
+
+function getMove() { 
+    // AI not complete, need to implement a heuristic function to evaluate any given position (output will be a decimal between -1 and 1)
+    let initState = [];
+    for (let i = 0; i < 9; i++) {
+        initState.push(cells[i].innerHTML);
+    }
+    for (let targetScore = -1; targetScore <= 1; targetScore++) {
+        for (let i = 0; i <= 8; i++) {
+            if (actions(initState, lastCapture).includes(i) && maxVal(result(initState, i, computer), i, 0, player) == targetScore) {
+                return i;
+            }
+        }
+    }
+}
+
+function result(state, move, playerToMove) {
+    newState = [...state];
+    if (newState[move] == playerToMove) newState[move] == playerToMove + playerToMove;
+    else newState[move] = playerToMove;
+    return newState;
 }
 
 function terminalAndUtility(state) {
@@ -138,26 +131,24 @@ function terminalAndUtility(state) {
     return [false, 0];
 }
 
-function maxVal(state, lCapture, depth) {
-    counter++;
+function maxVal(state, lCapture, depth, playerToMove) {
     let termValue = terminalAndUtility(state);
-    if (termValue[0]) return termValue[1];
-    if (depth > maxDepth) return 0;
+    if (termValue[0]) return termValue[1]; counter++;
+    if (depth > maxDepth) return 0; 
     let v = -2;
     for (action of actions(state, lCapture)) {
-        v = Math.max(v, minVal(result(state, action), cells[action], ++depth));
+        v = Math.max(v, minVal(result(state, action, playerToMove), cells[action], ++depth, playerToMove == computer ? player : computer));
     }
     return v;
 }
 
-function minVal(state, lCapture, depth) {
-    counter++;
+function minVal(state, lCapture, depth, playerToMove) {
     let termValue = terminalAndUtility(state);
-    if (termValue[0]) return termValue[1];
-    if (depth > maxDepth) return 0;
+    if (termValue[0]) return termValue[1]; counter++;
+    if (depth > maxDepth) return 0; 
     let v = 2;
     for (action of actions(state, lCapture)) {
-        v = Math.min(v, maxVal(result(state, action), cells[action], ++depth));
+        v = Math.min(v, maxVal(result(state, action, playerToMove), cells[action], ++depth, playerToMove == computer ? player : computer));
     }
     return v;
 }
